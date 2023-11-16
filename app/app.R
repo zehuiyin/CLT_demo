@@ -33,17 +33,17 @@ ui <- fluidPage(
     ),
     column(6,
            align="center",
-      sliderInput("sample_size", "Sample Size", min = 0, max = 500, value = 50)
+      sliderInput("sample_size", "Sample Size", min = 0, max = 1000, value = 50)
     )
   ),
   fluidRow(
     column(6,
            align="center",
-           sliderInput("para1", "Min/Mean/lambda/df1", min = 0, max = 30, value = 5)
+           uiOutput("para1")
     ),
     column(6,
            align="center",
-           sliderInput("para2", "Max/SD/df2", min = 0, max = 30, value = 10)
+           uiOutput("para2")
     )
   ),
   fluidRow(
@@ -63,44 +63,86 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
+  output$para1 <- renderUI({
+    if (input$pop_dist == "norm") {
+      sliderInput("normal_mean", "Mean", min = -30, max = 30, value = 0)
+    } else if (input$pop_dist == "unif") {
+      sliderInput("unif_min", "Min", min = -30, max = 30, value = 0)
+    } else if (input$pop_dist == "poiss") {
+      sliderInput("poiss_lambda", "Lambda", min = 0, max = 30, value = 5)
+    } else if (input$pop_dist == "chiq") {
+      sliderInput("chiq_df", "df", min = 0, max = 30, value = 5)
+    } else if (input$pop_dist == "F") {
+      sliderInput("f_df1", "df1", min = 0, max = 30, value = 5)
+    }
+  })
+  
+  output$para2 <- renderUI({
+    if (input$pop_dist == "norm") {
+      sliderInput("norm_sd", "SD", min = 0, max = 30, value = 5)
+    } else if (input$pop_dist == "unif") {
+      sliderInput("unif_max", "Max", min = -30, max = 30, value = 10)
+    } else if (input$pop_dist == "poiss") {
+
+    } else if (input$pop_dist == "chiq") {
+
+    } else if (input$pop_dist == "F") {
+      sliderInput("f_df2", "df2", min = 0, max = 30, value = 5)
+    }
+  })
+  
   samples <- reactive({
     req(input$pop_dist)
+    req(input$sample_size)
     
     if (input$pop_dist == "norm") {
+      req(input$normal_mean)
+      req(input$norm_sd)
+      
       data <- data.frame(
         x = sample(rnorm(input$sample_size,
-                         mean = input$para1,
-                         sd = input$para2))
+                         mean = input$normal_mean,
+                         sd = input$norm_sd))
       )
     }
     
     if (input$pop_dist == "unif") {
+      req(input$unif_min)
+      req(input$unif_max)
+      
       data <- data.frame(
         x = sample(runif(input$sample_size,
-                         min = input$para1,
-                         max = input$para2))
+                         min = input$unif_min,
+                         max = input$unif_max))
       )
     }
     
     if (input$pop_dist == "poiss") {
+      req(input$poiss_lambda)
+      
       data <- data.frame(
         x = sample(rpois(input$sample_size,
-                         lambda = input$para1))
+                         lambda = input$poiss_lambda))
       )
     }
     
     if (input$pop_dist == "chiq") {
+      req(input$chiq_df)
+      
       data <- data.frame(
         x = sample(rchisq(input$sample_size,
-                          df = input$para1))
+                          df = input$chiq_df))
       )
     }
     
     if (input$pop_dist == "F") {
+      req(input$f_df1)
+      req(input$f_df2)
+      
       data <- data.frame(
         x = sample(rf(input$sample_size,
-                      df1 = input$para1,
-                      df2 = input$para2))
+                      df1 = input$f_df1,
+                      df2 = input$f_df2))
       )
     }
     
@@ -109,42 +151,56 @@ server <- function(input, output, session) {
   
   means <- reactive({
     req(input$pop_dist)
+    req(input$sample_size)
     
     if (input$pop_dist == "norm") {
+      req(input$normal_mean)
+      req(input$norm_sd)
+      
       data <- data.frame(
         x = replicate(1e4, mean(sample(rnorm(input$sample_size,
-                         mean = input$para1,
-                         sd = input$para2))))
+                         mean = input$normal_mean,
+                         sd = input$norm_sd))))
       )
     }
     
     if (input$pop_dist == "unif") {
+      req(input$unif_min)
+      req(input$unif_max)
+      
       data <- data.frame(
         x = replicate(1e4, mean(sample(runif(input$sample_size,
-                         min = input$para1,
-                         max = input$para2))))
+                         min = input$unif_min,
+                         max = input$unif_max))))
       )
     }
     
     if (input$pop_dist == "poiss") {
+      req(input$poiss_lambda)
+      
       data <- data.frame(
         x = replicate(1e4, mean(sample(rpois(input$sample_size,
-                         lambda = input$para1))))
+                         lambda = input$poiss_lambda))))
       )
     }
     
     if (input$pop_dist == "chiq") {
+      req(input$chiq_df)
+      
       data <- data.frame(
         x = replicate(1e4, mean(sample(rchisq(input$sample_size,
-                          df = input$para1))))
+                          df = input$chiq_df))))
       )
     }
     
     if (input$pop_dist == "F") {
+      req(input$f_df1)
+      req(input$f_df2)
+      
       data <- data.frame(
         x = replicate(1e4, mean(sample(rf(input$sample_size,
-                      df1 = input$para1,
-                      df2 = input$para2))))
+                      df1 = input$f_df1,
+                      df2 = input$f_df2))))
       )
     }
     
@@ -178,7 +234,7 @@ server <- function(input, output, session) {
       stat_qq() +stat_qq_line() +
       labs(x = "Theotical Quantiles",
            y = "Sample Quantiles",
-           title = "Normal Quantile Plot") +
+           title = "Normal Quantile Plot of Sample Means") +
       theme(panel.background = element_blank(),
             panel.border = element_rect(color = "black", fill = NA),
             plot.title = element_text(hjust = 0.5))
