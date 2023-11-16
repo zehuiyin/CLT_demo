@@ -1,0 +1,12 @@
+---
+title: "index"
+---
+
+Render shiny app and serve it to local port for testing
+
+```{r}
+# | warning: false
+# | message: false
+shinylive::export(appdir = "./app", destdir = "./docs", verbose = F)
+httpuv::runStaticServer("./docs", port=8000)
+```
