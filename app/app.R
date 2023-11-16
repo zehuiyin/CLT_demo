@@ -7,6 +7,7 @@ ui <- fluidPage(
   titlePanel(
     h1("Central Limit Theorm", align = "center")
   ),
+  div(
   fluidRow(
     column(10,
            align="center",
@@ -59,7 +60,7 @@ ui <- fluidPage(
            align="center",
       plotOutput("qq_sample_mean")
     )
-  )
+  ), style = "max-width: 1200px; margin: auto;")
 )
 
 server <- function(input, output, session) {
